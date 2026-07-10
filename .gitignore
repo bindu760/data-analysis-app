@@ -1,0 +1,41 @@
+# --- Environment / Secrets ---
+.env
+.env.*
+*.key
+
+# --- Database (contains user data, passwords, chat history) ---
+users.db
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Streamlit ---
+.streamlit/secrets.toml
+
+# --- OS / Editor junk ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Logs ---
+*.log
+
+# --- Data files (if generated/local, remove this line if lict_data.json should be tracked) ---
+# lict_data.json
