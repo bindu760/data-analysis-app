@@ -36,14 +36,33 @@ You need two API keys:
 | `GROQ_API_KEY` | https://console.groq.com/keys |
 | `E2B_API_KEY` | https://e2b.dev |
 
-You can either:
-- paste them directly into the sidebar fields when the app runs, **or**
-- set them as environment variables before launching:
+You can provide the keys in three ways (checked in this order: `secrets.toml` →
+`.env` / environment variables → sidebar input):
 
+**Option A - `.env` file (simplest)**
 ```bash
-export GROQ_API_KEY="gsk_..."
-export E2B_API_KEY="e2b_..."
+cp .env.example .env
+# then edit .env and put your real keys in:
+#   GROQ_API_KEY=gsk_...
+#   E2B_API_KEY=e2b_...
 ```
+The app loads `.env` automatically at startup (via `python-dotenv`) - the
+sidebar shows "✅ API keys loaded automatically" and you never need to type
+them again. `.env` is already in `.gitignore` so it's never committed.
+
+**Option B - Streamlit secrets.toml**
+```bash
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+# then edit .streamlit/secrets.toml and put your real keys in:
+#   GROQ_API_KEY = "gsk_..."
+#   E2B_API_KEY  = "e2b_..."
+```
+Also loads automatically, also gitignored. Use this instead of `.env` if
+you're deploying to Streamlit Community Cloud, which reads secrets.toml
+natively.
+
+**Option C - paste into the sidebar** each time you run the app (only
+shown if no saved keys are found via either option above).
 
 ## Run
 
@@ -63,7 +82,6 @@ Then open the local URL Streamlit prints (usually `http://localhost:8501`).
 | `sandbox_executor.py` | Ships the dataframe + generated code into an E2B sandbox and runs it |
 | `pdf_report.py` | Builds the final PDF (ReportLab): narrative + data table + charts |
 | `requirements.txt` | Python dependencies |
-
 ## Security note
 
 The generated analysis code always runs inside the E2B sandbox, never inside
