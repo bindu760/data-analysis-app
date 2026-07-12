@@ -1,6 +1,7 @@
 """
 agents.py
-Two AI "agents" built on top of the Groq API:
+Two AI "agents" built on top of the Groq API (OpenAI-compatible chat
+completions, running open models like Llama 3.3 super fast):
 
 1. Code Agent      -> reads the dataframe schema + user question, writes a
                       complete, runnable Python analysis script (pandas +
@@ -15,26 +16,24 @@ Two AI "agents" built on top of the Groq API:
 
 from groq import Groq
 
-# A powerful and highly capable model on Groq suitable for both coding and data reporting tasks
+# Fast + strong general-purpose model on Groq. You can swap this for any
+# model available in your Groq account (e.g. "llama-3.1-8b-instant" for
+# an even faster/cheaper option).
 MODEL = "llama-3.3-70b-versatile"
 
 
 def get_client(api_key: str) -> Groq:
-    """Creates and returns an initialized Groq client instance."""
     return Groq(api_key=api_key)
 
 
 def _extract_text(response) -> str:
-    """Extracts and cleans the text content from the Groq API completion response."""
     return response.choices[0].message.content.strip()
 
 
 def _strip_code_fences(code: str) -> str:
-    """Removes standard markdown triple-backtick fences if present in the LLM output."""
     code = code.strip()
     if code.startswith("```"):
         parts = code.split("```")
-        # parts[1] usually holds "python\n<code>" or just "<code>"
         inner = parts[1]
         if inner.startswith("python"):
             inner = inner[len("python"):]
@@ -50,25 +49,29 @@ def generate_analysis_code(client: Groq, df_info: str, query: str) -> str:
         "Given a description of that DataFrame and a user question, write a COMPLETE, "
         "RUNNABLE Python script that:\n"
         "1. Explores the columns relevant to the question.\n"
-        "2. Performs whatever analysis is needed to answer it (grouping, aggregation, etc.).\n"
-        "3. Creates AT LEAST ONE clear, well-labeled matplotlib or seaborn chart.\n"
-        "4. Prints key numeric findings using print().\n\n"
-        "CRITICAL RULES FOR CHARTS:\n"
-        "- You MUST create at least one chart using matplotlib or seaborn.\n"
-        "- Give the chart a title, labels, and call plt.figure() before creating it.\n"
-        "- ALWAYS save your chart as an image file named 'chart.png' at the very end of your script using `plt.savefig('chart.png', bbox_inches='tight')`.\n"
-        "- NEVER call plt.show() or any other save function. Only save to 'chart.png'.\n"
+        "2. Performs whatever analysis is needed to answer it (grouping, aggregation, "
+        "correlation, trend, ranking, etc. as appropriate).\n"
+        "3. Creates AT LEAST ONE clear, well-labeled matplotlib chart. IMPORTANT: call "
+        "plt.figure() before each new chart, and call plt.show() immediately after each "
+        "chart is fully built (this is required for the chart to be captured - do not "
+        "skip it).\n"
+        "4. Prints key numeric findings and a short plain-text summary using print().\n\n"
+        "Rules:\n"
+        "- Do NOT read any file from disk yourself - `df` already exists.\n"
+        "- Only use pandas, numpy, matplotlib and seaborn.\n"
+        "- Wrap risky operations in try/except so the script never crashes outright.\n"
+        "- Add axis labels, a title, and (if useful) a legend to every chart.\n"
         "- Respond with RAW PYTHON CODE ONLY - no markdown fences, no commentary."
     )
     user_msg = f"DataFrame info:\n{df_info}\n\nUser question: {query}\n\nWrite the full python analysis script now."
 
-    # Using Groq's Chat Completions API with a low temperature for predictable code output
     resp = client.chat.completions.create(
         model=MODEL,
-        temperature=0.1,
+        max_tokens=2000,
+        temperature=0.2,
         messages=[
             {"role": "system", "content": system},
-            {"role": "user", "content": user_msg}
+            {"role": "user", "content": user_msg},
         ],
     )
     return _strip_code_fences(_extract_text(resp))
@@ -95,13 +98,13 @@ def generate_report_narrative(
     )
     user_msg = f"User question: {query}\n\nCode execution output/logs:\n{exec_logs}\n\nWrite the report now."
 
-    # Using Groq's Chat Completions API to generate the final formatted narrative report
     resp = client.chat.completions.create(
         model=MODEL,
+        max_tokens=1500,
         temperature=0.3,
         messages=[
             {"role": "system", "content": system},
-            {"role": "user", "content": user_msg}
+            {"role": "user", "content": user_msg},
         ],
     )
     return _extract_text(resp)
